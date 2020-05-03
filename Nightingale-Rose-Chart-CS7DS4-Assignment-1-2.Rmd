@@ -1,0 +1,83 @@
+---
+title: "Nightingale-RoseChart-CS7DS4-Assignment1.2"
+author: "Divyanshu Marwah"
+date: "2/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+
+```{r setup, include=FALSE}
+data<-read.csv("nightingale-data.csv")
+sliced_data<-data[,c(1,6:8)]
+head(sliced_data)
+```
+```{r}
+melted <- melt(Night, "Month")
+names(melted) <- c("Date", "Cause", "Deaths")
+head(melted)
+```
+```{r}
+melted$Cause <- sub("\\.rate", "", melted$Cause)
+melted$Regime <- ordered( rep(c(rep('Before', 12), rep('After', 12)), 3), 
+                          levels=c('Before', 'After'))
+```
+```{r}
+sliced_data <- melted
+head(sliced_data)
+```
+```{r}
+require("HistData")
+data("Nightingale")
+head(Nightingale)
+```
+```{r}
+require(reshape)
+Night<- Nightingale[,c(2,8:10)]
+```
+
+
+```{r}
+#separating the before and after regime
+slice1 <- subset(sliced_data, Regime=="Before")
+slice2 <- subset(sliced_data, Regime=="After")
+head(slice1)
+head(slice2)
+```
+```{r}
+# sort according to Deaths in decreasing order, so counts are not obscured [thx: Monique Graf]
+slice1 <- slice1[order(slice1$Deaths, decreasing=TRUE),]
+slice2 <- slice2[order(slice1$Deaths, decreasing=TRUE),]
+```
+```{r}
+Night <- rbind(slice1, slice2)
+```
+```{r}
+require(ggplot2)
+# Before plot
+
+cxc1 <- ggplot(slice1, aes(x = factor(Date), y=Deaths, fill = Cause)) +
+  # do it as a stacked bar chart first
+  geom_bar(width = 1, position = position_stack(reverse = FALSE), stat="identity",color="Gray") +
+  # set scale so area ~ Deaths	
+  scale_y_sqrt() 
+# A coxcomb plot = bar chart + polar coordinates
+cxc1 + coord_polar(start=3*pi/2) + 
+  ggtitle("Mortality Cause in east(Apr 1854-Mar 1855)") + 
+  xlab("")
+
+```
+
+
+```{r}
+# After plot
+cxc2 <- ggplot(slice2, aes(x = factor(Month), y=Deaths, fill = Cause)) +
+  geom_bar(width = 1, position="identity", stat="identity", color="gray") +
+  scale_y_sqrt()
+cxc2 + coord_polar(start=4.5*pi) +
+  ggtitle("Mortality Cause in east(Apr 1855-Mar 1856)") + 
+  xlab("")
+```
